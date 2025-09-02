@@ -1,9 +1,10 @@
 #pragma once
-#include "../Reflection/Public/Macros.h"
+#include "Object.h"
+#include "Reflection/Public/Macros.h"
 
-class Actor : public qreflect::QObject {
+class Actor : public QObject {
     QCLASS()
-    REFLECTION_BODY(Actor, qreflect::QObject)
+    REFLECTION_BODY(Actor, QObject)
 public:
     QPROPERTY() int   Health = 100;
     QPROPERTY() float Speed  = 4.5f;

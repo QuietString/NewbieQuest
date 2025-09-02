@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../Reflection/Public/Macros.h"
+#include "Reflection/Public/Macros.h"
 
 struct FVector {
     QSTRUCT()

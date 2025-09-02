@@ -1,7 +1,0 @@
-Class=Player
-ObjectName=Hero01
-Health:int=200
-Speed:float=6
-bAlive:bool=true
-Ammo:int=50
-Zoom:float=1.5

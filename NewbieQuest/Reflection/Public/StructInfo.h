@@ -19,7 +19,7 @@ namespace qreflect {
             for (auto& p : Props) fn(*p);
         }
     };
-
+    
     struct StructRegistry {
         std::unordered_map<std::string, StructInfo*> Structs;
 

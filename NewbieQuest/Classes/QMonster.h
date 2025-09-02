@@ -1,12 +1,12 @@
 #pragma once
-#include "../Reflection/Public/Macros.h"
-#include <string>
+#include "Reflection/Public/Macros.h"
 
+#include "Object.h"
 #include "Vector.h"
 
-class Monster : public qreflect::QObject {
+class QMonster : public QObject {
     QCLASS()
-    REFLECTION_BODY(Monster, qreflect::QObject)
+    REFLECTION_BODY(QMonster, QObject)
 
 private:
     QPROPERTY() int   Level = 10;

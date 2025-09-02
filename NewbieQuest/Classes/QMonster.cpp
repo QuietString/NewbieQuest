@@ -1,8 +1,8 @@
-#include "Monster.h"
+#include "QMonster.h"
 
 #include "Vector.h"
 
-BEGIN_REFLECTION(Monster)
+BEGIN_REFLECTION(QMonster)
     // Since it's a body of Monster's private static member function(_RegisterProperties)
     // it's accessible to private
     QFIELD(Level)

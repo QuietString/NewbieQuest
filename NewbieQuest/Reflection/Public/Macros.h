@@ -2,7 +2,7 @@
 #include <memory>
 #include "ClassInfo.h"
 #include "Property.h"
-#include "QObject.h"
+#include "Object.h"
 #include "StructInfo.h"
 
 #define QCLASS()
@@ -20,7 +20,7 @@ public: \
         if (!inited) { \
             ci.Name = #ClassType; \
             ci.Base = &SuperType::StaticClass(); \
-            ci.Factory = []()->std::unique_ptr<::qreflect::QObject> { return std::make_unique<ClassType>(); }; \
+            ci.Factory = []()->std::unique_ptr<QObject> { return std::make_unique<ClassType>(); }; \
             _RegisterProperties(ci); \
             ::qreflect::Registry::Get().Register(&ci); \
             inited = true; \

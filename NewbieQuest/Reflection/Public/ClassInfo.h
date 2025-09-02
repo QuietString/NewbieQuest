@@ -6,10 +6,10 @@
 #include <functional>
 #include "Property.h"
 
+class QObject;
+
 namespace qreflect {
-
-    class QObject;
-
+    
     struct ClassInfo {
         std::string Name;
         ClassInfo*  Base = nullptr;
@@ -36,5 +36,4 @@ namespace qreflect {
             return it==Classes.end()? nullptr : it->second;
         }
     };
-
 }

@@ -5,8 +5,8 @@
 
 namespace qreflect {
 
-    // Little-endian 바이너리 .qassetb
-    // 포맷 v1:
+    // Little-endian binary .qassetb
+    // format v1:
     //  [4]  Magic "QASB"
     //  [2]  Version = 1
     //  [2]  Reserved = 0
@@ -15,7 +15,7 @@ namespace qreflect {
     //  [2]  ObjectNameLen
     //  [N]  ObjectName (UTF-8)
     //  [2]  PropertyCount
-    //  반복 PropertyCount 회:
+    //  repeat PropertyCount count:
     //     [2] NameLen
     //     [N] Name (UTF-8)
     //     [1] TypeKind (0=Bool, 1=Int, 2=Float)

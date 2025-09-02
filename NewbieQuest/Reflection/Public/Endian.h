@@ -8,7 +8,7 @@
 
 namespace qreflect {
 
-// 바이트스왑(2/4/8 바이트 지원)
+// byte swap(supporting 2/4/8)
 template <class T>
 inline T byteswap(T v) {
     static_assert(std::is_trivially_copyable_v<T>, "byteswap requires trivially copyable type");
@@ -40,12 +40,12 @@ inline T byteswap(T v) {
         std::memcpy(&v, &x, 8);
         return v;
     } else {
-        // 필요 시 확장
+        // extend it if needed
         return v;
     }
 }
 
-// 리틀엔디안 고정 저장/복원
+// little endian fixation save/restore
 template <class T>
 inline T to_le(T v) {
 #if defined(__cpp_lib_endian)
@@ -56,9 +56,9 @@ inline T to_le(T v) {
     }
 #else
     #ifdef _WIN32
-        return v; // MSVC/x86 계열은 리틀엔디안
+        return v; // MSVC/x86 uses little endian
     #else
-        // 보수적으로 swap (원하는 환경에 맞게 조정 가능)
+        // conservative swap (adjustable as desired environment)
         return byteswap(v);
     #endif
 #endif
@@ -66,7 +66,7 @@ inline T to_le(T v) {
 
 template <class T>
 inline T from_le(T v) {
-    // to_le와 동일 동작(대칭)
+    // same logic as to_le (symmetry)
 #if defined(__cpp_lib_endian)
     if constexpr (std::endian::native == std::endian::little) {
         return v;
@@ -82,4 +82,4 @@ inline T from_le(T v) {
 #endif
 }
 
-} // namespace qreflect
+}

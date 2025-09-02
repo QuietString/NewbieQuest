@@ -1,11 +1,11 @@
-#include "Serialization.h"
+#include "../Public/Serialization.h"
 #include <fstream>
 #include <unordered_map>
-#include "Util.h"
-#include "TypeTraits.h"
-#include "ClassInfo.h"
-#include "Property.h"
-#include "Walk.h"
+#include "../Public/Util.h"
+#include "../Public/TypeTraits.h"
+#include "../Public/ClassInfo.h"
+#include "../Public/Property.h"
+#include "../Public/Walk.h"
 
 namespace qreflect {
 
@@ -17,7 +17,7 @@ bool SaveQAsset(const QObject& obj, const std::string& path) {
     ofs << "Class=" << ci.Name << "\n";
     ofs << "ObjectName=" << obj.GetObjectName() << "\n";
 
-    // leaf만 출력: Foo.X:float=1.0
+    // output leaf only: Foo.X:float=1.0
     ForEachLeafConst(obj, [&](const std::string& full, const PropertyBase& leaf, const void* ownerPtr){
         ofs << full << ":" << leaf.TypeName << "=" << leaf.GetAsString(ownerPtr) << "\n";
     });
@@ -47,7 +47,7 @@ std::unique_ptr<QObject> LoadQAsset(const std::string& path) {
     std::unique_ptr<QObject> obj = ci->Factory();
     obj->SetObjectName(objectName);
 
-    // leaf setter 맵: "Foo.X" -> (leaf property, ownerPtr(=Foo 구조체 주소))
+    // leaf setter map: "Foo.X" -> (leaf property, ownerPtr(=Foo struct address))
     std::unordered_map<std::string, const PropertyBase*> props;
     std::unordered_map<std::string, void*> owners;
 
@@ -89,4 +89,4 @@ void DumpObject(const QObject& obj, std::ostream& os) {
     });
 }
 
-} // namespace qreflect
+}

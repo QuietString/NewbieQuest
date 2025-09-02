@@ -1,4 +1,4 @@
-#include "QObject.h"
+#include "../Public/QObject.h"
 
 namespace qreflect {
 

@@ -9,7 +9,7 @@
 
 namespace qreflect {
 
-// 재귀적으로 leaf(원시 타입)까지 내려가며 콜백 호출
+// recursively walk down to leaf(primitive type) and call back
 // emit(name, leafProperty, ownerPtrOfLeaf)
 template <typename Emit>
 inline void ForEachLeafConst(const QObject& obj, const Emit& emit) {
@@ -35,7 +35,7 @@ inline void ForEachLeafConst(const QObject& obj, const Emit& emit) {
     });
 }
 
-// non-const 버전: setter 맵 만들 때 사용
+// non-const version: used for creating setter map
 // emit(name, leafProperty, ownerPtrOfLeaf)
 template <typename Emit>
 inline void ForEachLeaf(QObject& obj, const Emit& emit) {
@@ -61,4 +61,4 @@ inline void ForEachLeaf(QObject& obj, const Emit& emit) {
     });
 }
 
-} // namespace qreflect
+}

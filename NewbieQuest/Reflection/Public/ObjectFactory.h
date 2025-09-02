@@ -6,7 +6,7 @@
 
 namespace qreflect {
 
-    // new 로 객체 만들고 바로 ObjectName까지 지정
+    // create an instance by new and set ObjectName
     template <typename T, typename... Args>
     std::unique_ptr<T> NewObject(std::string name, Args&&... args) {
         static_assert(std::is_base_of_v<QObject, T>, "T must derive from qreflect::QObject");

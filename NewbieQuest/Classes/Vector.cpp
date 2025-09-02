@@ -1,1 +1,7 @@
-﻿#include "Vector.h"
+﻿#include "vector.h"
+
+BEGIN_REFLECTION_STRUCT(FVector)
+    SFIELD(X)
+    SFIELD(Y)
+    SFIELD(Z)
+END_REFLECTION_STRUCT()

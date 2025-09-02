@@ -1,14 +1,14 @@
-#include "Binary.h"
+#include "../Public/Binary.h"
 #include <fstream>
 #include <cstdint>
 #include <bit>
 #include <cstring>
 #include <unordered_map>
-#include "ClassInfo.h"
-#include "Property.h"
-#include "TypeTraits.h"
-#include "Walk.h"
-#include "Endian.h"
+#include "../Public/ClassInfo.h"
+#include "../Public/Property.h"
+#include "../Public/TypeTraits.h"
+#include "../Public/Walk.h"
+#include "../Public/Endian.h"
 
 namespace qreflect {
 namespace {
@@ -69,7 +69,7 @@ bool SaveQAssetBinary(const QObject& obj, const std::string& path) {
     write_str(os, ci.Name);
     write_str(os, obj.GetObjectName());
 
-    // leaf 수집
+    // gather leaf 
     struct LeafRow { std::string Name; const PropertyBase* P; const void* Owner; };
     std::vector<LeafRow> rows;
     ForEachLeafConst(obj, [&](const std::string& full, const PropertyBase& leaf, const void* ownerPtr){
@@ -104,7 +104,7 @@ std::unique_ptr<QObject> LoadQAssetBinary(const std::string& path) {
 
     uint16_t version=0,reserved=0;
     if (!read_u16(is,version) || !read_u16(is,reserved)) return nullptr;
-    if (version != 2) return nullptr; // v2만 처리(원하면 v1 fallback 추가)
+    if (version != 2) return nullptr; // process only v2
 
     std::string className, objectName;
     if (!read_str(is,className) || !read_str(is,objectName)) return nullptr;
@@ -117,7 +117,7 @@ std::unique_ptr<QObject> LoadQAssetBinary(const std::string& path) {
 
     uint16_t count=0; if (!read_u16(is,count)) return nullptr;
 
-    // leaf setter 맵
+    // leaf setter map
     std::unordered_map<std::string, const PropertyBase*> props;
     std::unordered_map<std::string, void*> owners;
     ForEachLeaf(*obj, [&](const std::string& full, const PropertyBase& leaf, void* ownerPtr){
@@ -146,4 +146,4 @@ std::unique_ptr<QObject> LoadQAssetBinary(const std::string& path) {
     return obj;
 }
 
-} // namespace qreflect
+}

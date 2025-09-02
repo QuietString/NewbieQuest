@@ -1,8 +1,8 @@
-#include "Assets.h"
-#include "Serialization.h"
+#include "../Public/Assets.h"
+#include "../Public/Serialization.h"
 #include <utility>
 
-#include "Binary.h"
+#include "../Public/Binary.h"
 
 namespace qreflect::assets {
 

@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
-#include "TypeTraits.h"
+#include "../Public/TypeTraits.h"
 
 namespace qreflect {
 

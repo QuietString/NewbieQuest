@@ -1,24 +1,23 @@
 #pragma once
 #include <memory>
 #include <string>
-#include <type_traits>
+//#include <type_traits>
 #include "TypeTraits.h"
 
-namespace qreflect {
-
-struct StructInfo; // fwd
+struct StructInfo;
 
 // primitive + struct
 enum class BasicKind;
 
-struct PropertyBase {
+struct PropertyBase
+{
     std::string Name;
     std::string TypeName;
     BasicKind   Kind;
 
     PropertyBase(std::string n, std::string tn, BasicKind k)
         : Name(std::move(n)), TypeName(std::move(tn)), Kind(k) {}
-    virtual ~PropertyBase() = default;
+    virtual ~PropertyBase();
 
     virtual void*       Ptr(void* obj) const = 0;
     virtual const void* CPtr(const void* obj) const = 0;
@@ -46,11 +45,11 @@ struct TypedProperty : PropertyBase {
 
     std::string GetAsString(const void* obj) const override {
         const T& v = *static_cast<const T*>(CPtr(obj));
-        return to_string(v);
+        return ToString(v);
     }
     bool SetFromString(void* obj, const std::string& s) const override {
         T& v = *static_cast<T*>(Ptr(obj));
-        return from_string(s, v);
+        return FromString(s, v);
     }
 };
 
@@ -91,6 +90,4 @@ inline std::unique_ptr<PropertyBase> MakeProperty(const char* name, T Owner::* m
                       "Only bool/int/float or QSTRUCT are supported.");
         return std::make_unique<TypedProperty<Owner, T>>(name, member);
     }
-}
-
 }

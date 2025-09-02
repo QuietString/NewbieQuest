@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "Reflection/Public/ClassInfo.h"
+#include "Reflection/Public/TypeInfos.h"
 
 class QObject {
 public:
@@ -9,8 +9,8 @@ public:
     const std::string& GetObjectName() const { return ObjectName; }
     void SetObjectName(std::string n) { ObjectName = std::move(n); }
 
-    virtual qreflect::ClassInfo& GetClassInfo() const = 0;
-    static qreflect::ClassInfo& StaticClass(); // root meta
+    virtual ClassInfo& GetClassInfo() const = 0;
+    static ClassInfo& StaticClass(); // root meta
 
 private:
     std::string ObjectName;

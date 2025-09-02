@@ -1,15 +1,7 @@
 ﻿#include "AssetManager.h"
-
 #include <filesystem>
-#include <fstream>
-#include <unordered_map>
-#include "Reflection/Public/TypeTraits.h"
-#include "Reflection/Public/ClassInfo.h"
-#include "Reflection/Public/Property.h"
 
 namespace fs = std::filesystem;
-
-using namespace qreflect;
 
 static fs::path& RootStorage() {
     static fs::path root;
@@ -40,22 +32,22 @@ fs::path QAssetManager::MakeAssetPath(std::string name)
 
 bool QAssetManager::SaveAssetByText(const QObject& obj, std::string name)
 {
-    fs::path full = MakeAssetPath(std::move(name));
-    full.replace_extension(".qasset_t");
-    return SaveQAssetAsText(obj, full.string());
+    fs::path FullPath = MakeAssetPath(std::move(name));
+    FullPath.replace_extension(".qasset_t");
+    return SaveQAssetAsText(obj, FullPath.string());
 }
 
 std::unique_ptr<QObject> QAssetManager::LoadAssetFromText(std::string name)
 {
-    fs::path full = MakeAssetPath(std::move(name));
-    full.replace_extension(".qasset_t");
-    return LoadQAssetByText(full.string());
+    fs::path FullPath = MakeAssetPath(std::move(name));
+    FullPath.replace_extension(".qasset_t");
+    return LoadQAssetByText(FullPath.string());
 }
 
 bool QAssetManager::SaveAsset(const QObject& obj, const std::string name)
 {
-    auto full = MakeAssetPath(std::move(name));
-    return SaveQAsset(obj, full.string());
+    auto FullPath = MakeAssetPath(std::move(name));
+    return SaveQAsset(obj, FullPath.string());
 }
 
 std::unique_ptr<QObject> QAssetManager::LoadAssetBinary(const std::string name)
@@ -66,17 +58,17 @@ std::unique_ptr<QObject> QAssetManager::LoadAssetBinary(const std::string name)
 
 bool QAssetManager::SaveQAsset(const QObject& obj, const std::string& path)
 {
-    std::ofstream os(path, std::ios::binary | std::ios::out | std::ios::trunc);
-    if (!os) return false;
+    std::ofstream OutputStream(path, std::ios::binary | std::ios::out | std::ios::trunc);
+    if (!OutputStream) return false;
 
-    const char magic[4] = {'Q','A','S','B'};
-    os.write(magic, 4);
-    write_u16(os, 2); // version 2: leaf-flat (structs flattened)
-    write_u16(os, 0);
+    constexpr char Magic[4] = {'Q','A','S','B'};
+    OutputStream.write(Magic, 4);
+    Write_Unsigned16(OutputStream, 2); // version 2: leaf-flat (structs flattened)
+    Write_Unsigned16(OutputStream, 0);
 
     ClassInfo& ci = obj.GetClassInfo();
-    write_str(os, ci.Name);
-    write_str(os, obj.GetObjectName());
+    WriteStream(OutputStream, ci.Name);
+    WriteStream(OutputStream, obj.GetObjectName());
 
     // gather leaf 
     struct LeafRow { std::string Name; const PropertyBase* P; const void* Owner; };
@@ -86,38 +78,39 @@ bool QAssetManager::SaveQAsset(const QObject& obj, const std::string& path)
     });
 
     if (rows.size()>0xFFFF) throw std::runtime_error("too many leaf properties");
-    write_u16(os, (uint16_t)rows.size());
+    Write_Unsigned16(OutputStream, (uint16_t)rows.size());
 
     for (auto& r : rows) {
-        write_str(os, r.Name);
+        WriteStream(OutputStream, r.Name);
         uint8_t kind = (r.P->Kind == BasicKind::Bool) ? 0 : (r.P->Kind == BasicKind::Int) ? 1 : (r.P->Kind == BasicKind::Float) ? 2 : 0xFF;
         if (kind==0xFF) throw std::runtime_error("non-primitive leaf");
-        write_u8(os, kind);
+        Write_Unsigned8(OutputStream, kind);
 
         const void* vp = r.P->CPtr(r.Owner);
         switch (kind) {
-        case 0: { uint8_t b = (*reinterpret_cast<const bool*>(vp)) ? 1u : 0u; write_u8(os,b); } break;
-        case 1: { int32_t v = (int32_t)(*reinterpret_cast<const int*>(vp)); write_i32(os,v); } break;
-        case 2: { float v = *reinterpret_cast<const float*>(vp); write_f32(os,v); } break;
+        case 0: { uint8_t b = (*reinterpret_cast<const bool*>(vp)) ? 1u : 0u; Write_Unsigned8(OutputStream,b); } break;
+        case 1: { int32_t v = (int32_t)(*reinterpret_cast<const int*>(vp)); Write_Int32(OutputStream,v); } break;
+        case 2: { float v = *reinterpret_cast<const float*>(vp); Write_Float32(OutputStream,v); } break;
+        default: { throw std::runtime_error("non-primitive leaf");}
         }
     }
-    return bool(os);
+    return bool(OutputStream);
 }
 
 std::unique_ptr<QObject> QAssetManager::LoadQAsset(const std::string& path)
 {
-    std::ifstream is(path, std::ios::binary);
-    if (!is) return nullptr;
+    std::ifstream InputStream(path, std::ios::binary);
+    if (!InputStream) return nullptr;
 
-    char magic[4]; is.read(magic,4);
-    if (!is || std::memcmp(magic,"QASB",4)!=0) return nullptr;
+    char Magic[4]; InputStream.read(Magic,4);
+    if (!InputStream || std::memcmp(Magic,"QASB",4)!=0) return nullptr;
 
-    uint16_t version=0,reserved=0;
-    if (!read_u16(is,version) || !read_u16(is,reserved)) return nullptr;
-    if (version != 2) return nullptr; // process only v2
+    uint16_t Version=0, Reserved=0;
+    if (!Read_Unsigned16(InputStream,Version) || !Read_Unsigned16(InputStream,Reserved)) return nullptr;
+    if (Version != 2) return nullptr; // process only v2
 
     std::string className, objectName;
-    if (!read_str(is,className) || !read_str(is,objectName)) return nullptr;
+    if (!ReadStream(InputStream,className) || !ReadStream(InputStream,objectName)) return nullptr;
 
     ClassInfo* ci = Registry::Get().Find(className);
     if (!ci || !ci->Factory) return nullptr;
@@ -125,7 +118,7 @@ std::unique_ptr<QObject> QAssetManager::LoadQAsset(const std::string& path)
     std::unique_ptr<QObject> obj = ci->Factory();
     obj->SetObjectName(objectName);
 
-    uint16_t count=0; if (!read_u16(is,count)) return nullptr;
+    uint16_t count=0; if (!Read_Unsigned16(InputStream,count)) return nullptr;
 
     // leaf setter map
     std::unordered_map<std::string, const PropertyBase*> props;
@@ -136,19 +129,19 @@ std::unique_ptr<QObject> QAssetManager::LoadQAsset(const std::string& path)
     });
 
     for (uint16_t i=0; i<count; ++i) {
-        std::string name; if (!read_str(is,name)) return nullptr;
-        uint8_t kind=0xFF; if (!read_u8(is,kind)) return nullptr;
+        std::string name; if (!ReadStream(InputStream,name)) return nullptr;
+        uint8_t kind=0xFF; if (!Read_Unsigned8(InputStream,kind)) return nullptr;
 
         auto it = props.find(name);
         const PropertyBase* pb = (it==props.end()? nullptr : it->second);
         void* ownerPtr = (pb? owners[name] : nullptr);
 
         switch (kind) {
-            case 0: { uint8_t b=0; if(!read_u8(is,b)) return nullptr;
+            case 0: { uint8_t b=0; if(!Read_Unsigned8(InputStream,b)) return nullptr;
                       if (pb && pb->Kind==BasicKind::Bool)  *reinterpret_cast<bool*>(pb->Ptr(ownerPtr))  = (b!=0); } break;
-            case 1: { int32_t v=0; if(!read_i32(is,v)) return nullptr;
+            case 1: { int32_t v=0; if(!Read_Int32(InputStream,v)) return nullptr;
                       if (pb && pb->Kind==BasicKind::Int)   *reinterpret_cast<int*>(pb->Ptr(ownerPtr))   = (int)v; } break;
-            case 2: { float v=0;   if(!read_f32(is,v)) return nullptr;
+            case 2: { float v=0;   if(!Read_Float32(InputStream,v)) return nullptr;
                       if (pb && pb->Kind==BasicKind::Float) *reinterpret_cast<float*>(pb->Ptr(ownerPtr)) = v; } break;
             default: return nullptr;
         }

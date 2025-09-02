@@ -1,0 +1,8 @@
+Class=Monster
+ObjectName=OrcBoss
+Level:int=35
+Rage:float=0.9
+bBoss:bool=true
+Position.X:float=100
+Position.Y:float=0
+Position.Z:float=-50

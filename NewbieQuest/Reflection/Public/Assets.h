@@ -12,8 +12,8 @@ namespace qreflect::assets {
     const fs::path& EnsureAssetRoot();         // lazy init: CWD/Contents
     fs::path MakeAssetPath(std::string name);  // append .qasset if missing
 
-    bool SaveAsset(const QObject& obj, std::string name);
-    std::unique_ptr<QObject> LoadAsset(std::string name);
+    bool SaveAssetByText(const QObject& obj, std::string name);
+    std::unique_ptr<QObject> LoadAssetFromText(std::string name);
 
     bool SaveAssetBinary(const QObject& obj, const std::string name);
     std::unique_ptr<QObject> LoadAssetBinary(const std::string name);

@@ -30,12 +30,12 @@ namespace qreflect::assets {
         return full;
     }
 
-    bool SaveAsset(const QObject& obj, std::string name) {
+    bool SaveAssetByText(const QObject& obj, std::string name) {
         fs::path full = MakeAssetPath(std::move(name));
         return SaveQAsset(obj, full.string());
     }
 
-    std::unique_ptr<QObject> LoadAsset(std::string name) {
+    std::unique_ptr<QObject> LoadAssetFromText(std::string name) {
         fs::path full = MakeAssetPath(std::move(name));
         return LoadQAsset(full.string());
     }

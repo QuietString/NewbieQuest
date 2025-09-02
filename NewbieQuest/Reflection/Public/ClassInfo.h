@@ -13,9 +13,12 @@ namespace qreflect {
     struct ClassInfo {
         std::string Name;
         ClassInfo*  Base = nullptr;
-        std::vector<std::unique_ptr<PropertyBase>> Props;
-        std::function<std::unique_ptr<QObject>()> Factory;
 
+        // Properties
+        std::vector<std::unique_ptr<PropertyBase>> Props;
+
+        std::function<std::unique_ptr<QObject>()> Factory;
+        
         template <typename Fn>
         void ForEachProperty(const Fn& fn) const {
             if (Base) Base->ForEachProperty(fn);

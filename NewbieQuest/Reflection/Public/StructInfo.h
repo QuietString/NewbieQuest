@@ -4,8 +4,8 @@
 #include <memory>
 #include <unordered_map>
 
-// Property.hpp를 포함해야 하지만, 순환 의존을 피하려면
-// 여기서는 forward-declare 후 소스/다른 헤더에서 include 합니다.
+// we need to include Property.h, but to avoid circular dependency
+// here we forward-declare and include it from other sources and headers.
 namespace qreflect {
 
     struct PropertyBase; // fwd

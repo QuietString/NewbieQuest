@@ -11,6 +11,7 @@ int main() {
     using namespace qreflect::assets;
 
     auto m = NewObject<Monster>("OrcBoss");
+    
     m->SetLevel(35);
     m->SetRage(0.9f);
     m->SetBoss(true);
@@ -22,8 +23,8 @@ int main() {
     DumpObject(*m, std::cout);
 
     // text save/load
-    SaveAsset(*m, "Monsters/OrcBoss");             // -> .../Contents/Monsters/OrcBoss.qasset
-    auto t = LoadAsset("Monsters/OrcBoss");
+    SaveAssetByText(*m, "Monsters/OrcBoss");             // -> .../Contents/Monsters/OrcBoss.qasset
+    auto t = LoadAssetFromText("Monsters/OrcBoss");
 
     // binary save/load
     SaveAssetBinary(*m, "Monsters/OrcBoss");        // -> .../Monsters/OrcBoss.qassetb

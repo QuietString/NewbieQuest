@@ -164,70 +164,70 @@ bool QAssetManager::SaveQAssetAsText(const QObject& obj, const std::string& path
     return true;
 }
 
-std::unique_ptr<QObject> QAssetManager::LoadQAssetByText(const std::string& path)
+std::unique_ptr<QObject> QAssetManager::LoadQAssetByText(const std::string& Path)
 {
-    std::ifstream ifs(path);
-    if (!ifs) return nullptr;
+    std::ifstream InputStream(Path);
+    if (!InputStream) return nullptr;
 
-    std::string line, className, objectName;
+    std::string Line, ClassName, ObjectName;
 
-    if (!std::getline(ifs, line)) return nullptr;
+    if (!std::getline(InputStream, Line)) return nullptr;
     {
-        auto pos = line.find('='); if (pos==std::string::npos || line.substr(0,pos)!="Class") return nullptr;
-        className = trim(line.substr(pos+1));
+        auto Pos = Line.find('='); if (Pos==std::string::npos || Line.substr(0,Pos)!="Class") return nullptr;
+        ClassName = trim(Line.substr(Pos+1));
     }
-    if (!std::getline(ifs, line)) return nullptr;
+    if (!std::getline(InputStream, Line)) return nullptr;
     {
-        auto pos = line.find('='); if (pos==std::string::npos || line.substr(0,pos)!="ObjectName") return nullptr;
-        objectName = trim(line.substr(pos+1));
+        auto pos = Line.find('='); if (pos==std::string::npos || Line.substr(0,pos)!="ObjectName") return nullptr;
+        ObjectName = trim(Line.substr(pos+1));
     }
 
-    ClassInfo* ci = Registry::Get().Find(className);
-    if (!ci || !ci->Factory) return nullptr;
+    ClassInfo* Info = Registry::Get().Find(ClassName);
+    if (!Info || !Info->Factory) return nullptr;
 
-    std::unique_ptr<QObject> obj = ci->Factory();
-    obj->SetObjectName(objectName);
+    std::unique_ptr<QObject> Obj = Info->Factory();
+    Obj->SetObjectName(ObjectName);
 
     // leaf setter map: "Foo.X" -> (leaf property, ownerPtr(=Foo struct address))
     std::unordered_map<std::string, const PropertyBase*> props;
     std::unordered_map<std::string, void*> owners;
 
-    ForEachLeaf(*obj, [&](const std::string& full, const PropertyBase& leaf, void* ownerPtr){
+    ForEachLeaf(*Obj, [&](const std::string& full, const PropertyBase& leaf, void* ownerPtr){
         props[full]  = &leaf;
         owners[full] = ownerPtr;
     });
 
     // name:type=value
-    while (std::getline(ifs, line)) {
-        line = trim(line); if (line.empty()) continue;
-        auto pos1 = line.find(':'), pos2 = line.find('=');
+    while (std::getline(InputStream, Line)) {
+        Line = trim(Line); if (Line.empty()) continue;
+        auto pos1 = Line.find(':'), pos2 = Line.find('=');
         if (pos1==std::string::npos || pos2==std::string::npos || pos1>pos2) continue;
 
-        std::string pname = trim(line.substr(0, pos1));
-        std::string tname = trim(line.substr(pos1+1, pos2-(pos1+1)));
-        std::string value = trim(line.substr(pos2+1));
+        std::string Pname = trim(Line.substr(0, pos1));
+        std::string Tname = trim(Line.substr(pos1+1, pos2-(pos1+1)));
+        std::string Value = trim(Line.substr(pos2+1));
 
-        auto itp = props.find(pname);
+        auto itp = props.find(Pname);
         if (itp == props.end()) continue;
 
-        const PropertyBase* pb = itp->second;
-        if (pb->TypeName != tname) continue;
+        const PropertyBase* Pb = itp->second;
+        if (Pb->TypeName != Tname) continue;
 
-        void* ownerPtr = owners[pname];
-        pb->SetFromString(ownerPtr, value);
+        void* OwnerPtr = owners[Pname];
+        Pb->SetFromString(OwnerPtr, Value);
     }
     
-    return obj;
+    return Obj;
 }
 
-void QAssetManager::DumpObject(const QObject& obj, std::ostream& os)
+void QAssetManager::DumpObject(const QObject& Obj, std::ostream& OutputStream)
 {
-    ClassInfo& ci = obj.GetClassInfo();
-    os << "[Class] " << ci.Name << "\n";
-    os << "[ObjectName] " << obj.GetObjectName() << "\n";
-    os << "[Properties]\n";
+    ClassInfo& ci = Obj.GetClassInfo();
+    OutputStream << "[Class] " << ci.Name << "\n";
+    OutputStream << "[ObjectName] " << Obj.GetObjectName() << "\n";
+    OutputStream << "[Properties]\n";
 
-    ForEachLeafConst(obj, [&](const std::string& full, const PropertyBase& leaf, const void* ownerPtr){
-        os << "  - " << leaf.TypeName << " " << full << " = " << leaf.GetAsString(ownerPtr) << "\n";
+    ForEachLeafConst(Obj, [&](const std::string& FullPath, const PropertyBase& Leaf, const void* OwnerPtr){
+        OutputStream << "  - " << Leaf.TypeName << " " << FullPath << " = " << Leaf.GetAsString(OwnerPtr) << "\n";
     });
 }

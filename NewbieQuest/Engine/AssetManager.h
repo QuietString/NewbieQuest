@@ -56,10 +56,10 @@ public:
     
     // text .qasset
     bool SaveQAssetAsText(const QObject& obj, const std::string& path);
-    std::unique_ptr<QObject> LoadQAssetByText(const std::string& path);
+    std::unique_ptr<QObject> LoadQAssetByText(const std::string& Path);
 
     // debug dump
-    void DumpObject(const QObject& obj, std::ostream& os);
+    void DumpObject(const QObject& Obj, std::ostream& OutputStream);
 
     inline std::string trim(std::string s) {
         auto notspace = [](int ch){ return !std::isspace(ch); };

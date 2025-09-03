@@ -17,7 +17,7 @@ struct PropertyBase
 
     PropertyBase(std::string n, std::string tn, BasicKind k)
         : Name(std::move(n)), TypeName(std::move(tn)), Kind(k) {}
-    virtual ~PropertyBase();
+    virtual ~PropertyBase() {}
 
     virtual void*       Ptr(void* obj) const = 0;
     virtual const void* CPtr(const void* obj) const = 0;

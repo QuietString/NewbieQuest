@@ -7,7 +7,7 @@
 struct StructInfo;
 
 // primitive + struct
-enum class BasicKind;
+enum class BasicKind : std::uint8_t;
 
 struct PropertyBase
 {
@@ -19,11 +19,11 @@ struct PropertyBase
         : Name(std::move(n)), TypeName(std::move(tn)), Kind(k) {}
     virtual ~PropertyBase() {}
 
-    virtual void*       Ptr(void* obj) const = 0;
-    virtual const void* CPtr(const void* obj) const = 0;
+    virtual void*       Ptr(void* Obj) const = 0;
+    virtual const void* CPtr(const void* Obj) const = 0;
 
-    virtual std::string GetAsString(const void* obj) const = 0;
-    virtual bool        SetFromString(void* obj, const std::string& s) const = 0;
+    virtual std::string GetAsString(const void* Obj) const = 0;
+    virtual bool        SetFromString(void* Obj, const std::string& s) const = 0;
 
     // provide StructInfo if struct, else nullptr
     virtual const StructInfo* GetStructInfo() const { return nullptr; }
@@ -33,22 +33,22 @@ struct PropertyBase
 template <typename Owner, typename T>
 struct TypedProperty : PropertyBase {
     T Owner::* Member;
-    explicit TypedProperty(const char* name, T Owner::* m)
-        : PropertyBase(name, TypeTraits<T>::Name(), 
+    explicit TypedProperty(const char* Name, T Owner::* m)
+        : PropertyBase(Name, TypeTraits<T>::Name(), 
                        std::is_same_v<T,bool>  ? BasicKind::Bool  :
                        std::is_same_v<T,int>   ? BasicKind::Int   :
                                                  BasicKind::Float),
           Member(m) {}
 
-    void* Ptr(void* obj) const override { return &(static_cast<Owner*>(obj)->*Member); }
-    const void* CPtr(const void* obj) const override { return &(static_cast<const Owner*>(obj)->*Member); }
+    void* Ptr(void* Obj) const override { return &(static_cast<Owner*>(Obj)->*Member); }
+    const void* CPtr(const void* Obj) const override { return &(static_cast<const Owner*>(Obj)->*Member); }
 
-    std::string GetAsString(const void* obj) const override {
-        const T& v = *static_cast<const T*>(CPtr(obj));
+    std::string GetAsString(const void* Obj) const override {
+        const T& v = *static_cast<const T*>(CPtr(Obj));
         return ToString(v);
     }
-    bool SetFromString(void* obj, const std::string& s) const override {
-        T& v = *static_cast<T*>(Ptr(obj));
+    bool SetFromString(void* Obj, const std::string& s) const override {
+        T& v = *static_cast<T*>(Ptr(Obj));
         return FromString(s, v);
     }
 };

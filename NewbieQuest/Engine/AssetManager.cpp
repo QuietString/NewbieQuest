@@ -1,64 +1,64 @@
 ﻿#include "AssetManager.h"
 #include <filesystem>
 
-namespace fs = std::filesystem;
+namespace FileSystem = std::filesystem;
 
-static fs::path& RootStorage() {
-    static fs::path root;
-    return root;
+static FileSystem::path& RootStorage() {
+    static FileSystem::path Root;
+    return Root;
 }
 
-void QAssetManager::SetAssetRoot(const fs::path& p)
+void QAssetManager::SetAssetRoot(const FileSystem::path& Path)
 {
-    RootStorage() = p; 
+    RootStorage() = Path; 
 }
 
-const fs::path& QAssetManager::EnsureAssetRoot()
+const FileSystem::path& QAssetManager::EnsureAssetRoot()
 {
-    auto& r = RootStorage();
-    if (r.empty()) r = fs::current_path() / "Contents";
-    fs::create_directories(r);
-    return r;
+    auto& Root = RootStorage();
+    if (Root.empty()) Root = FileSystem::current_path() / "Contents";
+    FileSystem::create_directories(Root);
+    return Root;
 }
 
-fs::path QAssetManager::MakeAssetPath(std::string name)
+FileSystem::path QAssetManager::MakeAssetPath(std::string Name)
 {
-    if (name.size() < 7 || name.substr(name.size() - 7) != ".qasset")
-        name += ".qasset";
-    fs::path full = EnsureAssetRoot() / name;
-    fs::create_directories(full.parent_path());
-    return full;
+    if (Name.size() < 7 || Name.substr(Name.size() - 7) != ".qasset")
+        Name += ".qasset";
+    FileSystem::path FullPath = EnsureAssetRoot() / Name;
+    FileSystem::create_directories(FullPath.parent_path());
+    return FullPath;
 }
 
-bool QAssetManager::SaveAssetByText(const QObject& obj, std::string name)
+bool QAssetManager::SaveAssetByText(const QObject& Obj, std::string Name)
 {
-    fs::path FullPath = MakeAssetPath(std::move(name));
+    FileSystem::path FullPath = MakeAssetPath(std::move(Name));
     FullPath.replace_extension(".qasset_t");
-    return SaveQAssetAsText(obj, FullPath.string());
+    return SaveQAssetAsText(Obj, FullPath.string());
 }
 
-std::unique_ptr<QObject> QAssetManager::LoadAssetFromText(std::string name)
+std::unique_ptr<QObject> QAssetManager::LoadAssetFromText(std::string Name)
 {
-    fs::path FullPath = MakeAssetPath(std::move(name));
+    FileSystem::path FullPath = MakeAssetPath(std::move(Name));
     FullPath.replace_extension(".qasset_t");
     return LoadQAssetByText(FullPath.string());
 }
 
-bool QAssetManager::SaveAsset(const QObject& obj, const std::string name)
+bool QAssetManager::SaveAsset(const QObject& obj, const std::string Name)
 {
-    auto FullPath = MakeAssetPath(std::move(name));
+    auto FullPath = MakeAssetPath(std::move(Name));
     return SaveQAsset(obj, FullPath.string());
 }
 
-std::unique_ptr<QObject> QAssetManager::LoadAssetBinary(const std::string name)
+std::unique_ptr<QObject> QAssetManager::LoadAssetBinary(const std::string Name)
 {
-    auto full = MakeAssetPath(std::move(name));
+    auto full = MakeAssetPath(std::move(Name));
     return LoadQAsset(full.string());
 }
 
-bool QAssetManager::SaveQAsset(const QObject& obj, const std::string& path)
+bool QAssetManager::SaveQAsset(const QObject& Obj, const std::string& Path)
 {
-    std::ofstream OutputStream(path, std::ios::binary | std::ios::out | std::ios::trunc);
+    std::ofstream OutputStream(Path, std::ios::binary | std::ios::out | std::ios::trunc);
     if (!OutputStream) return false;
 
     constexpr char Magic[4] = {'Q','A','S','B'};
@@ -66,28 +66,28 @@ bool QAssetManager::SaveQAsset(const QObject& obj, const std::string& path)
     Write_Unsigned16(OutputStream, 2); // version 2: leaf-flat (structs flattened)
     Write_Unsigned16(OutputStream, 0);
 
-    ClassInfo& ci = obj.GetClassInfo();
+    ClassInfo& ci = Obj.GetClassInfo();
     WriteStream(OutputStream, ci.Name);
-    WriteStream(OutputStream, obj.GetObjectName());
+    WriteStream(OutputStream, Obj.GetObjectName());
 
     // gather leaf 
     struct LeafRow { std::string Name; const PropertyBase* P; const void* Owner; };
-    std::vector<LeafRow> rows;
-    ForEachLeafConst(obj, [&](const std::string& full, const PropertyBase& leaf, const void* ownerPtr){
-        rows.push_back({ full, &leaf, ownerPtr });
+    std::vector<LeafRow> Rows;
+    ForEachLeafConst(Obj, [&](const std::string& full, const PropertyBase& Leaf, const void* ownerPtr){
+        Rows.push_back({ full, &Leaf, ownerPtr });
     });
 
-    if (rows.size()>0xFFFF) throw std::runtime_error("too many leaf properties");
-    Write_Unsigned16(OutputStream, (uint16_t)rows.size());
+    if (Rows.size()>0xFFFF) throw std::runtime_error("too many leaf properties");
+    Write_Unsigned16(OutputStream, (uint16_t)Rows.size());
 
-    for (auto& r : rows) {
-        WriteStream(OutputStream, r.Name);
-        uint8_t kind = (r.P->Kind == BasicKind::Bool) ? 0 : (r.P->Kind == BasicKind::Int) ? 1 : (r.P->Kind == BasicKind::Float) ? 2 : 0xFF;
-        if (kind==0xFF) throw std::runtime_error("non-primitive leaf");
-        Write_Unsigned8(OutputStream, kind);
+    for (auto& Row : Rows) {
+        WriteStream(OutputStream, Row.Name);
+        uint8_t Kind = (Row.P->Kind == BasicKind::Bool) ? 0 : (Row.P->Kind == BasicKind::Int) ? 1 : (Row.P->Kind == BasicKind::Float) ? 2 : 0xFF;
+        if (Kind==0xFF) throw std::runtime_error("non-primitive leaf");
+        Write_Unsigned8(OutputStream, Kind);
 
-        const void* vp = r.P->CPtr(r.Owner);
-        switch (kind) {
+        const void* vp = Row.P->CPtr(Row.Owner);
+        switch (Kind) {
         case 0: { uint8_t b = (*reinterpret_cast<const bool*>(vp)) ? 1u : 0u; Write_Unsigned8(OutputStream,b); } break;
         case 1: { int32_t v = (int32_t)(*reinterpret_cast<const int*>(vp)); Write_Int32(OutputStream,v); } break;
         case 2: { float v = *reinterpret_cast<const float*>(vp); Write_Float32(OutputStream,v); } break;
@@ -97,9 +97,9 @@ bool QAssetManager::SaveQAsset(const QObject& obj, const std::string& path)
     return bool(OutputStream);
 }
 
-std::unique_ptr<QObject> QAssetManager::LoadQAsset(const std::string& path)
+std::unique_ptr<QObject> QAssetManager::LoadQAsset(const std::string& Path)
 {
-    std::ifstream InputStream(path, std::ios::binary);
+    std::ifstream InputStream(Path, std::ios::binary);
     if (!InputStream) return nullptr;
 
     char Magic[4]; InputStream.read(Magic,4);
@@ -109,57 +109,57 @@ std::unique_ptr<QObject> QAssetManager::LoadQAsset(const std::string& path)
     if (!Read_Unsigned16(InputStream,Version) || !Read_Unsigned16(InputStream,Reserved)) return nullptr;
     if (Version != 2) return nullptr; // process only v2
 
-    std::string className, objectName;
-    if (!ReadStream(InputStream,className) || !ReadStream(InputStream,objectName)) return nullptr;
+    std::string ClassName, ObjectName;
+    if (!ReadStream(InputStream,ClassName) || !ReadStream(InputStream,ObjectName)) return nullptr;
 
-    ClassInfo* ci = Registry::Get().Find(className);
-    if (!ci || !ci->Factory) return nullptr;
+    ClassInfo* Info = Registry::Get().Find(ClassName);
+    if (!Info || !Info->Factory) return nullptr;
 
-    std::unique_ptr<QObject> obj = ci->Factory();
-    obj->SetObjectName(objectName);
+    std::unique_ptr<QObject> Obj = Info->Factory();
+    Obj->SetObjectName(ObjectName);
 
     uint16_t count=0; if (!Read_Unsigned16(InputStream,count)) return nullptr;
 
     // leaf setter map
     std::unordered_map<std::string, const PropertyBase*> props;
     std::unordered_map<std::string, void*> owners;
-    ForEachLeaf(*obj, [&](const std::string& full, const PropertyBase& leaf, void* ownerPtr){
+    ForEachLeaf(*Obj, [&](const std::string& full, const PropertyBase& leaf, void* ownerPtr){
         props[full]  = &leaf;
         owners[full] = ownerPtr;
     });
 
     for (uint16_t i=0; i<count; ++i) {
-        std::string name; if (!ReadStream(InputStream,name)) return nullptr;
-        uint8_t kind=0xFF; if (!Read_Unsigned8(InputStream,kind)) return nullptr;
+        std::string Name; if (!ReadStream(InputStream,Name)) return nullptr;
+        uint8_t Kind=0xFF; if (!Read_Unsigned8(InputStream,Kind)) return nullptr;
 
-        auto it = props.find(name);
-        const PropertyBase* pb = (it==props.end()? nullptr : it->second);
-        void* ownerPtr = (pb? owners[name] : nullptr);
+        auto It = props.find(Name);
+        const PropertyBase* Pb = (It==props.end()? nullptr : It->second);
+        void* OwnerPtr = (Pb? owners[Name] : nullptr);
 
-        switch (kind) {
+        switch (Kind) {
             case 0: { uint8_t b=0; if(!Read_Unsigned8(InputStream,b)) return nullptr;
-                      if (pb && pb->Kind==BasicKind::Bool)  *reinterpret_cast<bool*>(pb->Ptr(ownerPtr))  = (b!=0); } break;
+                      if (Pb && Pb->Kind==BasicKind::Bool)  *reinterpret_cast<bool*>(Pb->Ptr(OwnerPtr))  = (b!=0); } break;
             case 1: { int32_t v=0; if(!Read_Int32(InputStream,v)) return nullptr;
-                      if (pb && pb->Kind==BasicKind::Int)   *reinterpret_cast<int*>(pb->Ptr(ownerPtr))   = (int)v; } break;
+                      if (Pb && Pb->Kind==BasicKind::Int)   *reinterpret_cast<int*>(Pb->Ptr(OwnerPtr))   = (int)v; } break;
             case 2: { float v=0;   if(!Read_Float32(InputStream,v)) return nullptr;
-                      if (pb && pb->Kind==BasicKind::Float) *reinterpret_cast<float*>(pb->Ptr(ownerPtr)) = v; } break;
+                      if (Pb && Pb->Kind==BasicKind::Float) *reinterpret_cast<float*>(Pb->Ptr(OwnerPtr)) = v; } break;
             default: return nullptr;
         }
     }
-    return obj;
+    return Obj;
 }
 
-bool QAssetManager::SaveQAssetAsText(const QObject& obj, const std::string& path) {
-    std::ofstream ofs(path, std::ios::out | std::ios::trunc);
-    if (!ofs) return false;
+bool QAssetManager::SaveQAssetAsText(const QObject& Obj, const std::string& Path) {
+    std::ofstream OutputStream(Path, std::ios::out | std::ios::trunc);
+    if (!OutputStream) return false;
 
-    ClassInfo& ci = obj.GetClassInfo();
-    ofs << "Class=" << ci.Name << "\n";
-    ofs << "ObjectName=" << obj.GetObjectName() << "\n";
+    ClassInfo& Info = Obj.GetClassInfo();
+    OutputStream << "Class=" << Info.Name << "\n";
+    OutputStream << "ObjectName=" << Obj.GetObjectName() << "\n";
 
     // output leaf only: Foo.X:float=1.0
-    ForEachLeafConst(obj, [&](const std::string& full, const PropertyBase& leaf, const void* ownerPtr){
-        ofs << full << ":" << leaf.TypeName << "=" << leaf.GetAsString(ownerPtr) << "\n";
+    ForEachLeafConst(Obj, [&](const std::string& full, const PropertyBase& Leaf, const void* OwnerPtr){
+        OutputStream << full << ":" << Leaf.TypeName << "=" << Leaf.GetAsString(OwnerPtr) << "\n";
     });
     return true;
 }
@@ -174,12 +174,12 @@ std::unique_ptr<QObject> QAssetManager::LoadQAssetByText(const std::string& Path
     if (!std::getline(InputStream, Line)) return nullptr;
     {
         auto Pos = Line.find('='); if (Pos==std::string::npos || Line.substr(0,Pos)!="Class") return nullptr;
-        ClassName = trim(Line.substr(Pos+1));
+        ClassName = Trim(Line.substr(Pos+1));
     }
     if (!std::getline(InputStream, Line)) return nullptr;
     {
-        auto pos = Line.find('='); if (pos==std::string::npos || Line.substr(0,pos)!="ObjectName") return nullptr;
-        ObjectName = trim(Line.substr(pos+1));
+        auto Pos = Line.find('='); if (Pos==std::string::npos || Line.substr(0,Pos)!="ObjectName") return nullptr;
+        ObjectName = Trim(Line.substr(Pos+1));
     }
 
     ClassInfo* Info = Registry::Get().Find(ClassName);
@@ -189,31 +189,31 @@ std::unique_ptr<QObject> QAssetManager::LoadQAssetByText(const std::string& Path
     Obj->SetObjectName(ObjectName);
 
     // leaf setter map: "Foo.X" -> (leaf property, ownerPtr(=Foo struct address))
-    std::unordered_map<std::string, const PropertyBase*> props;
-    std::unordered_map<std::string, void*> owners;
+    std::unordered_map<std::string, const PropertyBase*> Props;
+    std::unordered_map<std::string, void*> Owners;
 
-    ForEachLeaf(*Obj, [&](const std::string& full, const PropertyBase& leaf, void* ownerPtr){
-        props[full]  = &leaf;
-        owners[full] = ownerPtr;
+    ForEachLeaf(*Obj, [&](const std::string& full, const PropertyBase& Leaf, void* OwnerPtr){
+        Props[full]  = &Leaf;
+        Owners[full] = OwnerPtr;
     });
 
     // name:type=value
     while (std::getline(InputStream, Line)) {
-        Line = trim(Line); if (Line.empty()) continue;
-        auto pos1 = Line.find(':'), pos2 = Line.find('=');
-        if (pos1==std::string::npos || pos2==std::string::npos || pos1>pos2) continue;
+        Line = Trim(Line); if (Line.empty()) continue;
+        auto Pos1 = Line.find(':'), Pos2 = Line.find('=');
+        if (Pos1==std::string::npos || Pos2==std::string::npos || Pos1>Pos2) continue;
 
-        std::string Pname = trim(Line.substr(0, pos1));
-        std::string Tname = trim(Line.substr(pos1+1, pos2-(pos1+1)));
-        std::string Value = trim(Line.substr(pos2+1));
+        std::string Pname = Trim(Line.substr(0, Pos1));
+        std::string Tname = Trim(Line.substr(Pos1+1, Pos2-(Pos1+1)));
+        std::string Value = Trim(Line.substr(Pos2+1));
 
-        auto itp = props.find(Pname);
-        if (itp == props.end()) continue;
+        auto Itp = Props.find(Pname);
+        if (Itp == Props.end()) continue;
 
-        const PropertyBase* Pb = itp->second;
+        const PropertyBase* Pb = Itp->second;
         if (Pb->TypeName != Tname) continue;
 
-        void* OwnerPtr = owners[Pname];
+        void* OwnerPtr = Owners[Pname];
         Pb->SetFromString(OwnerPtr, Value);
     }
     
@@ -222,8 +222,8 @@ std::unique_ptr<QObject> QAssetManager::LoadQAssetByText(const std::string& Path
 
 void QAssetManager::DumpObject(const QObject& Obj, std::ostream& OutputStream)
 {
-    ClassInfo& ci = Obj.GetClassInfo();
-    OutputStream << "[Class] " << ci.Name << "\n";
+    ClassInfo& Info = Obj.GetClassInfo();
+    OutputStream << "[Class] " << Info.Name << "\n";
     OutputStream << "[ObjectName] " << Obj.GetObjectName() << "\n";
     OutputStream << "[Properties]\n";
 

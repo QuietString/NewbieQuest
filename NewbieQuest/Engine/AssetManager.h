@@ -11,7 +11,7 @@
 
 class QObject;
 
-namespace fs = std::filesystem;
+namespace FileSystem = std::filesystem;
 
 // Singleton class for managing assets.
 class QAssetManager
@@ -20,15 +20,15 @@ public:
 
     static QAssetManager& Get() { static QAssetManager AssetManager; return AssetManager; }
     
-    void SetAssetRoot(const fs::path& p);
-    const fs::path& EnsureAssetRoot();
-    fs::path MakeAssetPath(std::string name);  // append .qasset if missing
+    void SetAssetRoot(const FileSystem::path& Path);
+    const FileSystem::path& EnsureAssetRoot();
+    FileSystem::path MakeAssetPath(std::string Name);  // append .qasset if missing
 
-    bool SaveAssetByText(const QObject& obj, std::string name);
-    std::unique_ptr<QObject> LoadAssetFromText(std::string name);
+    bool SaveAssetByText(const QObject& Obj, std::string Name);
+    std::unique_ptr<QObject> LoadAssetFromText(std::string Name);
 
-    bool SaveAsset(const QObject& obj, const std::string name);
-    std::unique_ptr<QObject> LoadAssetBinary(const std::string name);
+    bool SaveAsset(const QObject& obj, const std::string Name);
+    std::unique_ptr<QObject> LoadAssetBinary(const std::string Name);
 
     template<typename T>
     requires std::is_base_of_v<QObject, T>
@@ -51,17 +51,17 @@ public:
     //     [N] Name (UTF-8)
     //     [1] TypeKind (0=Bool, 1=Int, 2=Float)
     //     [V] Value (Bool:1, Int:4, Float:4)
-    bool SaveQAsset(const QObject& obj, const std::string& path);
-    std::unique_ptr<QObject> LoadQAsset(const std::string& path);
+    bool SaveQAsset(const QObject& Obj, const std::string& Path);
+    std::unique_ptr<QObject> LoadQAsset(const std::string& Path);
     
     // text .qasset
-    bool SaveQAssetAsText(const QObject& obj, const std::string& path);
+    bool SaveQAssetAsText(const QObject& Obj, const std::string& Path);
     std::unique_ptr<QObject> LoadQAssetByText(const std::string& Path);
 
     // debug dump
     void DumpObject(const QObject& Obj, std::ostream& OutputStream);
 
-    inline std::string trim(std::string s) {
+    inline std::string Trim(std::string s) {
         auto notspace = [](int ch){ return !std::isspace(ch); };
         s.erase(s.begin(), std::ranges::find_if(s, notspace));
         s.erase(std::find_if(s.rbegin(), s.rend(), notspace).base(), s.end());
@@ -148,34 +148,34 @@ private:
 #pragma region Binary I/O
     
 private:
-    inline void WriteRaw(std::ofstream& os, const void* p, std::size_t n) {
-        os.write(reinterpret_cast<const char*>(p), static_cast<std::streamsize>(n));
+    inline void WriteRaw(std::ofstream& OutputStream, const void* Ptr, std::size_t n) {
+        OutputStream.write(reinterpret_cast<const char*>(Ptr), static_cast<std::streamsize>(n));
     }
-    inline void ReadRaw(std::ifstream& is, void* p, std::size_t n) {
-        is.read(reinterpret_cast<char*>(p), static_cast<std::streamsize>(n));
+    inline void ReadRaw(std::ifstream& InputStream, void* Ptr, std::size_t n) {
+        InputStream.read(reinterpret_cast<char*>(Ptr), static_cast<std::streamsize>(n));
     }
 
-    inline void Write_Unsigned8 (std::ofstream& os, uint8_t v){ WriteRaw(os, &v, 1); }
-    inline bool Read_Unsigned8 (std::ifstream& is, uint8_t& v){ ReadRaw(is, &v, 1); return bool(is); }
+    inline void Write_Unsigned8 (std::ofstream& OutputStream, uint8_t v){ WriteRaw(OutputStream, &v, 1); }
+    inline bool Read_Unsigned8 (std::ifstream& InputStream, uint8_t& v){ ReadRaw(InputStream, &v, 1); return bool(InputStream); }
 
-    inline void Write_Unsigned16 (std::ofstream& os, uint16_t v){ v = ToLittleEndian<uint16_t>(v); WriteRaw(os, &v, 2); }
-    inline bool Read_Unsigned16 (std::ifstream& is, uint16_t& v){ ReadRaw(is, &v, 2); v = FromLittleEndian<uint16_t>(v); return bool(is); }
+    inline void Write_Unsigned16 (std::ofstream& OutputStream, uint16_t v){ v = ToLittleEndian<uint16_t>(v); WriteRaw(OutputStream, &v, 2); }
+    inline bool Read_Unsigned16 (std::ifstream& InputStream, uint16_t& v){ ReadRaw(InputStream, &v, 2); v = FromLittleEndian<uint16_t>(v); return bool(InputStream); }
 
-    inline void Write_Int32 (std::ofstream& os, int32_t v){ v = ToLittleEndian<int32_t>(v); WriteRaw(os, &v, 4); }
-    inline bool Read_Int32 (std::ifstream& is, int32_t& v){ ReadRaw(is, &v, 4); v = FromLittleEndian<int32_t>(v); return bool(is); }
+    inline void Write_Int32 (std::ofstream& OutputStream, int32_t v){ v = ToLittleEndian<int32_t>(v); WriteRaw(OutputStream, &v, 4); }
+    inline bool Read_Int32 (std::ifstream& InputStream, int32_t& v){ ReadRaw(InputStream, &v, 4); v = FromLittleEndian<int32_t>(v); return bool(InputStream); }
 
-    inline void Write_Float32 (std::ofstream& os, float v){
+    inline void Write_Float32 (std::ofstream& OutputStream, float v){
         static_assert(sizeof(float)==4);
         uint32_t u; std::memcpy(&u, &v, 4);
         u = ToLittleEndian<uint32_t>(u);
-        WriteRaw(os, &u, 4);
+        WriteRaw(OutputStream, &u, 4);
     }
-    inline bool  Read_Float32 (std::ifstream& is, float& v){
+    inline bool  Read_Float32 (std::ifstream& InputStream, float& v){
         static_assert(sizeof(float)==4);
-        uint32_t u; ReadRaw(is, &u, 4);
+        uint32_t u; ReadRaw(InputStream, &u, 4);
         u = FromLittleEndian<uint32_t>(u);
         std::memcpy(&v, &u, 4);
-        return bool(is);
+        return bool(InputStream);
     }
 
     inline void WriteStream(std::ofstream& os, const std::string& s){
@@ -195,28 +195,28 @@ private:
 
 private:
 // recursively walk down to leaf(primitive type) and call back
-// emit(name, leafProperty, ownerPtrOfLeaf)
+// emit(Name, LeafProperty, OwnerPtrOfLeaf)
     
 template <typename Emit>
-inline void ForEachLeafConst(const QObject& obj, const Emit& emit) {
-    std::function<void(const void*, const StructInfo&, const std::string&)> walkStruct;
-    walkStruct = [&](const void* structPtr, const StructInfo& si, const std::string& prefix){
-        si.ForEachProperty([&](const PropertyBase& sp){
-            if (sp.Kind == BasicKind::Struct && sp.GetStructInfo()) {
-                const void* nested = sp.CPtr(structPtr);
-                walkStruct(nested, *sp.GetStructInfo(), prefix + sp.Name + ".");
+inline void ForEachLeafConst(const QObject& Obj, const Emit& emit) {
+    std::function<void(const void*, const StructInfo&, const std::string&)> WalkStruct;
+    WalkStruct = [&](const void* StructPtr, const StructInfo& Si, const std::string& Prefix){
+        Si.ForEachProperty([&](const PropertyBase& Sp){
+            if (Sp.Kind == BasicKind::Struct && Sp.GetStructInfo()) {
+                const void* nested = Sp.CPtr(StructPtr);
+                WalkStruct(nested, *Sp.GetStructInfo(), Prefix + Sp.Name + ".");
             } else {
-                emit(prefix + sp.Name, sp, structPtr);
+                emit(Prefix + Sp.Name, Sp, StructPtr);
             }
         });
     };
 
-    obj.GetClassInfo().ForEachProperty([&](const PropertyBase& p){
+    Obj.GetClassInfo().ForEachProperty([&](const PropertyBase& p){
         if (p.Kind == BasicKind::Struct && p.GetStructInfo()) {
-            const void* s = p.CPtr(&obj);
-            walkStruct(s, *p.GetStructInfo(), p.Name + ".");
+            const void* s = p.CPtr(&Obj);
+            WalkStruct(s, *p.GetStructInfo(), p.Name + ".");
         } else {
-            emit(p.Name, p, &obj);
+            emit(p.Name, p, &Obj);
         }
     });
 }
@@ -224,25 +224,25 @@ inline void ForEachLeafConst(const QObject& obj, const Emit& emit) {
 // non-const version: used for creating setter map
 // emit(name, leafProperty, ownerPtrOfLeaf)
 template <typename Emit>
-inline void ForEachLeaf(QObject& obj, const Emit& emit) {
-    std::function<void(void*, const StructInfo&, const std::string&)> walkStruct;
-    walkStruct = [&](void* structPtr, const StructInfo& si, const std::string& prefix){
-        si.ForEachProperty([&](const PropertyBase& sp){
-            if (sp.Kind == BasicKind::Struct && sp.GetStructInfo()) {
-                void* nested = sp.Ptr(structPtr);
-                walkStruct(nested, *sp.GetStructInfo(), prefix + sp.Name + ".");
+inline void ForEachLeaf(QObject& Obj, const Emit& emit) {
+    std::function<void(void*, const StructInfo&, const std::string&)> WalkStruct;
+    WalkStruct = [&](void* StructPtr, const StructInfo& Si, const std::string& Prefix){
+        Si.ForEachProperty([&](const PropertyBase& Sp){
+            if (Sp.Kind == BasicKind::Struct && Sp.GetStructInfo()) {
+                void* nested = Sp.Ptr(StructPtr);
+                WalkStruct(nested, *Sp.GetStructInfo(), Prefix + Sp.Name + ".");
             } else {
-                emit(prefix + sp.Name, sp, structPtr);
+                emit(Prefix + Sp.Name, Sp, StructPtr);
             }
         });
     };
 
-    obj.GetClassInfo().ForEachProperty([&](const PropertyBase& p){
+    Obj.GetClassInfo().ForEachProperty([&](const PropertyBase& p){
         if (p.Kind == BasicKind::Struct && p.GetStructInfo()) {
-            void* s = p.Ptr(&obj);
-            walkStruct(s, *p.GetStructInfo(), p.Name + ".");
+            void* s = p.Ptr(&Obj);
+            WalkStruct(s, *p.GetStructInfo(), p.Name + ".");
         } else {
-            emit(p.Name, p, &obj);
+            emit(p.Name, p, &Obj);
         }
     });
 }

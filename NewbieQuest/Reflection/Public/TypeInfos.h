@@ -18,9 +18,9 @@ struct ClassInfo {
     std::function<std::unique_ptr<QObject>()> Factory;
         
     template <typename Fn>
-    void ForEachProperty(const Fn& fn) const {
-        if (Base) Base->ForEachProperty(fn);
-        for (auto& p : Props) fn(*p);
+    void ForEachProperty(const Fn& Func) const {
+        if (Base) Base->ForEachProperty(Func);
+        for (auto& p : Props) Func(*p);
     }
 };
 
@@ -28,10 +28,10 @@ struct Registry {
     std::unordered_map<std::string, ClassInfo*> Classes;
 
     static Registry& Get() { static Registry R; return R; }
-    void Register(ClassInfo* ci) { Classes[ci->Name] = ci; }
-    ClassInfo* Find(const std::string& name) {
-        auto it = Classes.find(name);
-        return it==Classes.end()? nullptr : it->second;
+    void Register(ClassInfo* Info) { Classes[Info->Name] = Info; }
+    ClassInfo* Find(const std::string& Name) {
+        auto It = Classes.find(Name);
+        return It==Classes.end()? nullptr : It->second;
     }
 };
 
@@ -40,8 +40,8 @@ struct StructInfo {
     std::vector<std::unique_ptr<PropertyBase>> Props;
 
     template <typename Fn>
-    void ForEachProperty(const Fn& fn) const {
-        for (auto& p : Props) fn(*p);
+    void ForEachProperty(const Fn& Func) const {
+        for (auto& p : Props) Func(*p);
     }
 };
     
@@ -49,9 +49,9 @@ struct StructRegistry {
     std::unordered_map<std::string, StructInfo*> Structs;
 
     static StructRegistry& Get() { static StructRegistry R; return R; }
-    void Register(StructInfo* si) { Structs[si->Name] = si; }
-    StructInfo* Find(const std::string& name) {
-        auto it = Structs.find(name);
-        return it==Structs.end()? nullptr : it->second;
+    void Register(StructInfo* Info) { Structs[Info->Name] = Info; }
+    StructInfo* Find(const std::string& Name) {
+        auto It = Structs.find(Name);
+        return It==Structs.end()? nullptr : It->second;
     }
 };

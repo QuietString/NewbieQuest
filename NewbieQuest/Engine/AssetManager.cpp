@@ -52,8 +52,8 @@ bool QAssetManager::SaveAsset(const QObject& Obj, const std::string Name)
 
 std::unique_ptr<QObject> QAssetManager::LoadAssetBinary(const std::string Name)
 {
-    auto full = MakeAssetPath(Name);
-    return LoadQAsset(full.string());
+    auto FullPath = MakeAssetPath(Name);
+    return LoadQAsset(FullPath.string());
 }
 
 bool QAssetManager::SaveQAsset(const QObject& Obj, const std::string& Path)
@@ -73,8 +73,8 @@ bool QAssetManager::SaveQAsset(const QObject& Obj, const std::string& Path)
     // gather leaf 
     struct LeafRow { std::string Name; const PropertyBase* P; const void* Owner; };
     std::vector<LeafRow> Rows;
-    ForEachLeafConst(Obj, [&](const std::string& full, const PropertyBase& Leaf, const void* ownerPtr){
-        Rows.push_back({ full, &Leaf, ownerPtr });
+    ForEachLeafConst(Obj, [&](const std::string& full, const PropertyBase& Leaf, const void* OwnerPtr){
+        Rows.push_back({ full, &Leaf, OwnerPtr });
     });
 
     if (Rows.size()>0xFFFF) throw std::runtime_error("too many leaf properties");
@@ -86,11 +86,11 @@ bool QAssetManager::SaveQAsset(const QObject& Obj, const std::string& Path)
         if (Kind==0xFF) throw std::runtime_error("non-primitive leaf");
         Write_Unsigned8(OutputStream, Kind);
 
-        const void* vp = Row.P->CPtr(Row.Owner);
+        const void* VoidPtr = Row.P->ConstPtr(Row.Owner);
         switch (Kind) {
-        case 0: { uint8_t b = (*reinterpret_cast<const bool*>(vp)) ? 1u : 0u; Write_Unsigned8(OutputStream,b); } break;
-        case 1: { int32_t v = (int32_t)(*reinterpret_cast<const int*>(vp)); Write_Int32(OutputStream,v); } break;
-        case 2: { float v = *reinterpret_cast<const float*>(vp); Write_Float32(OutputStream,v); } break;
+        case 0: {uint8_t b = (*reinterpret_cast<const bool*>(VoidPtr)) ? 1u : 0u; Write_Unsigned8(OutputStream,b); } break;
+        case 1: { int32_t v = (int32_t)(*reinterpret_cast<const int*>(VoidPtr)); Write_Int32(OutputStream,v); } break;
+        case 2: { float v = *reinterpret_cast<const float*>(VoidPtr); Write_Float32(OutputStream,v); } break;
         default: { throw std::runtime_error("non-primitive leaf");}
         }
     }

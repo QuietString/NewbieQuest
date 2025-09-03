@@ -1,6 +1,6 @@
 #pragma once
 
-namespace TestCases
+namespace Demo
 {
     void Case1();
     

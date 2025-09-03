@@ -1,10 +1,12 @@
 #pragma once
 #include "Actor.h"
+#include "CoreMinimal.h"
 
-class Player : public Actor {
-    QCLASS()
+class Player : public Actor
+{
     REFLECTION_BODY(Player, Actor)
+    
 public:
-    QPROPERTY() int   Ammo = 30;
-    QPROPERTY() float Zoom = 1.25f;
+    int Ammo = 30;
+    float Zoom = 1.25f;
 };

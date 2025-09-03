@@ -32,5 +32,8 @@
 	<s:Boolean x:Key="/Default/Environment/SettingsMigration/IsMigratorApplied/=JetBrains_002EReSharper_002EFeature_002EServices_002ECpp_002ECodeStyle_002ESettingsUpgrade_002EFunctionReturnStyleSettingsUpgrader/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=qasset/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=qclass/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=qfield/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=qfunction/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=qproperty/@EntryIndexedValue">True</s:Boolean>
-	<s:Boolean x:Key="/Default/UserDictionary/Words/=qstruct/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=qstruct/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=sfield/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

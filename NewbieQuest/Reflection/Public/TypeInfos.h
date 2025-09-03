@@ -12,15 +12,14 @@ struct ClassInfo {
     std::string Name;
     ClassInfo*  Base = nullptr;
 
-    // Properties
-    std::vector<std::unique_ptr<PropertyBase>> Props;
+    std::vector<std::unique_ptr<PropertyBase>> Properties;
 
     std::function<std::unique_ptr<QObject>()> Factory;
         
     template <typename Fn>
     void ForEachProperty(const Fn& Func) const {
         if (Base) Base->ForEachProperty(Func);
-        for (auto& p : Props) Func(*p);
+        for (auto& Property : Properties) Func(*Property);
     }
 };
 
@@ -31,17 +30,17 @@ struct Registry {
     void Register(ClassInfo* Info) { Classes[Info->Name] = Info; }
     ClassInfo* Find(const std::string& Name) {
         auto It = Classes.find(Name);
-        return It==Classes.end()? nullptr : It->second;
+        return (It == Classes.end()) ? nullptr : It->second;
     }
 };
 
 struct StructInfo {
     std::string Name;
-    std::vector<std::unique_ptr<PropertyBase>> Props;
+    std::vector<std::unique_ptr<PropertyBase>> Properties;
 
     template <typename Fn>
     void ForEachProperty(const Fn& Func) const {
-        for (auto& p : Props) Func(*p);
+        for (auto& Property : Properties) Func(*Property);
     }
 };
     

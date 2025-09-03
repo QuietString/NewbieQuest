@@ -1,17 +1,9 @@
 #pragma once
-#include <string>
-#include "Reflection/Public/TypeInfos.h"
 
-class QObject {
-public:
-    virtual ~QObject() = default;
+#include "ObjectBase.h"
+#include "CoreMinimal.h"
 
-    const std::string& GetObjectName() const { return ObjectName; }
-    void SetObjectName(std::string n) { ObjectName = std::move(n); }
+class QObject : public QObjectBase
+{
 
-    virtual ClassInfo& GetClassInfo() const = 0;
-    static ClassInfo& StaticClass(); // root meta
-
-private:
-    std::string ObjectName;
 };

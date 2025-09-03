@@ -1,12 +1,13 @@
 #pragma once
-#include "Object.h"
-#include "Reflection/Public/Macros.h"
 
-class Actor : public QObject {
-    QCLASS()
+#include "CoreMinimal.h"
+
+class Actor : public QObject
+{
     REFLECTION_BODY(Actor, QObject)
+    
 public:
-    QPROPERTY() int   Health = 100;
-    QPROPERTY() float Speed  = 4.5f;
-    QPROPERTY() bool  bAlive = true;
+    int Health = 100;
+    float Speed = 4.5f;
+    bool bAlive = true;
 };

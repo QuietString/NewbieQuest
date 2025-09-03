@@ -1,7 +1,8 @@
 #pragma once
 #include <memory>
 #include <string>
-//#include <type_traits>
+#include <concepts>
+
 #include "TypeTraits.h"
 
 struct StructInfo;
@@ -15,12 +16,12 @@ struct PropertyBase
     std::string TypeName;
     BasicKind   Kind;
 
-    PropertyBase(std::string n, std::string tn, BasicKind k)
-        : Name(std::move(n)), TypeName(std::move(tn)), Kind(k) {}
+    PropertyBase(std::string InPropertyName, std::string TypeName, BasicKind k)
+        : Name(std::move(InPropertyName)), TypeName(std::move(TypeName)), Kind(k) {}
     virtual ~PropertyBase() {}
 
     virtual void*       Ptr(void* Obj) const = 0;
-    virtual const void* CPtr(const void* Obj) const = 0;
+    virtual const void* ConstPtr(const void* Obj) const = 0;
 
     virtual std::string GetAsString(const void* Obj) const = 0;
     virtual bool        SetFromString(void* Obj, const std::string& s) const = 0;
@@ -32,19 +33,30 @@ struct PropertyBase
 // -------- primitive type property --------
 template <typename Owner, typename T>
 struct TypedProperty : PropertyBase {
-    T Owner::* Member;
-    explicit TypedProperty(const char* Name, T Owner::* m)
-        : PropertyBase(Name, TypeTraits<T>::Name(), 
+
+    // A pointer-to-member to associated property 
+    T Owner::* MemberPtr;
+    
+    explicit TypedProperty(const char* InPropertyName, T Owner::* InMemberPtr)
+        : PropertyBase(InPropertyName, TypeTraits<T>::Name(), 
                        std::is_same_v<T,bool>  ? BasicKind::Bool  :
                        std::is_same_v<T,int>   ? BasicKind::Int   :
                                                  BasicKind::Float),
-          Member(m) {}
+          MemberPtr(InMemberPtr)
+    {}
 
-    void* Ptr(void* Obj) const override { return &(static_cast<Owner*>(Obj)->*Member); }
-    const void* CPtr(const void* Obj) const override { return &(static_cast<const Owner*>(Obj)->*Member); }
+    void* Ptr(void* Obj) const override
+    {
+        return &(static_cast<Owner*>(Obj)->*MemberPtr);
+    }
+    
+    const void* ConstPtr(const void* Obj) const override
+    {
+        return &(static_cast<const Owner*>(Obj)->*MemberPtr);
+    }
 
     std::string GetAsString(const void* Obj) const override {
-        const T& v = *static_cast<const T*>(CPtr(Obj));
+        const T& v = *static_cast<const T*>(ConstPtr(Obj));
         return ToString(v);
     }
     bool SetFromString(void* Obj, const std::string& s) const override {
@@ -53,25 +65,32 @@ struct TypedProperty : PropertyBase {
     }
 };
 
-// detect QSTRUCT 
-template <typename T, typename = void>
-struct IsReflectStruct : std::false_type {};
-template <typename T>
-struct IsReflectStruct<T, std::void_t<decltype(T::StaticStruct())>> : std::true_type {};
+// Check a property is struct-based
+template<class T>
+concept ReflectStruct = requires
+{
+    { T::StaticStruct() } -> std::convertible_to<const StructInfo&>;
+};
 
-// --------  struct property --------
+template<class T>
+struct IsReflectStruct : std::bool_constant<ReflectStruct<T>> {};
+
+// --------  Struct Property --------
 template <typename Owner, typename T>
 struct TypedStructProperty : PropertyBase {
+    
     static_assert(IsReflectStruct<T>::value, "T must be a QSTRUCT type");
-    T Owner::* Member;
+
+    T Owner::* MemberPtr;
+    
     const StructInfo* SI;
 
-    explicit TypedStructProperty(const char* name, T Owner::* m)
-        : PropertyBase(name, T::StaticStruct().Name, BasicKind::Struct),
-          Member(m), SI(&T::StaticStruct()) {}
+    explicit TypedStructProperty(const char* InPropertyName, T Owner::* InMemberPtr)
+        : PropertyBase(InPropertyName, T::StaticStruct().Name, BasicKind::Struct),
+          MemberPtr(InMemberPtr), SI(&T::StaticStruct()) {}
 
-    void* Ptr(void* obj) const override { return &(static_cast<Owner*>(obj)->*Member); }
-    const void* CPtr(const void* obj) const override { return &(static_cast<const Owner*>(obj)->*Member); }
+    void* Ptr(void* Obj) const override { return &(static_cast<Owner*>(Obj)->*MemberPtr); }
+    const void* ConstPtr(const void* Obj) const override { return &(static_cast<const Owner*>(Obj)->*MemberPtr); }
 
     //  doesn't change struct to literal string. (only use leaf)
     std::string GetAsString(const void*) const override { return "<struct>"; }
@@ -80,14 +99,20 @@ struct TypedStructProperty : PropertyBase {
     const StructInfo* GetStructInfo() const override { return SI; }
 };
 
-// -------- MakeProperty:  auto branch primitive or struct --------
+// Owner: type of owning class
+// T: decltype(ThisClass::Member)
+// MemberPtr: pointer to data member, not normal raw pointer.
+// IsReflectStruct to check the new property is a struct type or not.  
 template <typename Owner, typename T>
-inline std::unique_ptr<PropertyBase> MakeProperty(const char* name, T Owner::* member) {
-    if constexpr (IsReflectStruct<T>::value) {
-        return std::make_unique<TypedStructProperty<Owner, T>>(name, member);
-    } else {
-        static_assert(std::is_same_v<T,bool> || std::is_same_v<T,int> || std::is_same_v<T,float>,
-                      "Only bool/int/float or QSTRUCT are supported.");
-        return std::make_unique<TypedProperty<Owner, T>>(name, member);
+inline std::unique_ptr<PropertyBase> MakeProperty(const char* PropertyName, T Owner::* MemberPtr)
+{
+    if constexpr (IsReflectStruct<T>::value) // T is QStruct type
+    {
+        return std::make_unique<TypedStructProperty<Owner, T>>(PropertyName, MemberPtr);
+    }
+    else // T is a primitive or non-supported type
+    {
+        static_assert(std::is_same_v<T,bool> || std::is_same_v<T,int>|| std::is_same_v<T,float>, "Only bool/int/float or QSTRUCT are supported.");
+        return std::make_unique<TypedProperty<Owner, T>>(PropertyName, MemberPtr);
     }
 }

@@ -165,7 +165,7 @@
     </ItemDefinitionGroup>
     <ItemGroup>
         <ClCompile Include="Classes\Actor.cpp"/>
-        <ClCompile Include="Classes\QMonster.cpp"/>
+        <ClCompile Include="Classes\Monster.cpp" />
         <ClCompile Include="Classes\Player.cpp"/>
         <ClCompile Include="CoreTypes\Object.cpp">
             <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
@@ -244,6 +244,7 @@
             <AdditionalIncludeDirectories>C:\Users\quietstring\workspace\NewbieQuest\NewbieQuest\</AdditionalIncludeDirectories>
             <LinkCompiled>true</LinkCompiled>
         </ClCompile>
+        <ClCompile Include="CoreTypes\ObjectBase.cpp" />
         <ClCompile Include="CoreTypes\Vector.cpp">
             <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
             <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -323,7 +324,7 @@
         </ClCompile>
         <ClCompile Include="Engine\AssetManager.cpp"/>
         <ClCompile Include="NewbieQuest.cpp"/>
-        <ClCompile Include="Test\TestCases.cpp"/>
+        <ClCompile Include="Test\Demo.cpp" />
     </ItemGroup>
     <ItemGroup>
         <Folder Include="Contents\"/>
@@ -331,10 +332,11 @@
     </ItemGroup>
     <ItemGroup>
         <ClInclude Include="Classes\Actor.h"/>
-        <ClInclude Include="Classes\QMonster.h"/>
+        <ClInclude Include="Classes\Monster.h" />
         <ClInclude Include="Classes\Player.h"/>
         <ClInclude Include="CoreMinimal.h"/>
         <ClInclude Include="CoreTypes\Object.h"/>
+        <ClInclude Include="CoreTypes\ObjectBase.h" />
         <ClInclude Include="CoreTypes\Vector.h"/>
         <ClInclude Include="Engine\AssetManager.h"/>
         <ClInclude Include="Engine\ObjectFactory.h"/>
@@ -342,7 +344,7 @@
         <ClInclude Include="Reflection\Public\Property.h"/>
         <ClInclude Include="Reflection\Public\TypeInfos.h"/>
         <ClInclude Include="Reflection\Public\TypeTraits.h"/>
-        <ClInclude Include="Test\TestCases.h"/>
+        <ClInclude Include="Test\Demo.h" />
     </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
     <ImportGroup Label="ExtensionTargets">

@@ -1,6 +1,8 @@
-#include "Test/TestCases.h"
+
+#include "Test/Demo.h"
+
 
 int main() {
-
-    TestCases::Case1();
+    
+    Demo::Case1();
 }

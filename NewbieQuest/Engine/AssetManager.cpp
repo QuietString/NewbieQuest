@@ -37,22 +37,22 @@ bool QAssetManager::SaveAssetByText(const QObject& Obj, std::string Name)
     return SaveQAssetAsText(Obj, FullPath.string());
 }
 
-std::unique_ptr<QObject> QAssetManager::LoadAssetFromText(std::string Name)
+std::unique_ptr<QObject> QAssetManager::LoadAssetFromText(const std::string Name)
 {
-    FileSystem::path FullPath = MakeAssetPath(std::move(Name));
+    FileSystem::path FullPath = MakeAssetPath(Name);
     FullPath.replace_extension(".qasset_t");
     return LoadQAssetByText(FullPath.string());
 }
 
-bool QAssetManager::SaveAsset(const QObject& obj, const std::string Name)
+bool QAssetManager::SaveAsset(const QObject& Obj, const std::string Name)
 {
-    auto FullPath = MakeAssetPath(std::move(Name));
-    return SaveQAsset(obj, FullPath.string());
+    auto FullPath = MakeAssetPath(Name);
+    return SaveQAsset(Obj, FullPath.string());
 }
 
 std::unique_ptr<QObject> QAssetManager::LoadAssetBinary(const std::string Name)
 {
-    auto full = MakeAssetPath(std::move(Name));
+    auto full = MakeAssetPath(Name);
     return LoadQAsset(full.string());
 }
 
@@ -66,8 +66,8 @@ bool QAssetManager::SaveQAsset(const QObject& Obj, const std::string& Path)
     Write_Unsigned16(OutputStream, 2); // version 2: leaf-flat (structs flattened)
     Write_Unsigned16(OutputStream, 0);
 
-    ClassInfo& ci = Obj.GetClassInfo();
-    WriteStream(OutputStream, ci.Name);
+    ClassInfo& Info = Obj.GetClassInfo();
+    WriteStream(OutputStream, Info.Name);
     WriteStream(OutputStream, Obj.GetObjectName());
 
     // gather leaf 
@@ -121,20 +121,20 @@ std::unique_ptr<QObject> QAssetManager::LoadQAsset(const std::string& Path)
     uint16_t count=0; if (!Read_Unsigned16(InputStream,count)) return nullptr;
 
     // leaf setter map
-    std::unordered_map<std::string, const PropertyBase*> props;
-    std::unordered_map<std::string, void*> owners;
-    ForEachLeaf(*Obj, [&](const std::string& full, const PropertyBase& leaf, void* ownerPtr){
-        props[full]  = &leaf;
-        owners[full] = ownerPtr;
+    std::unordered_map<std::string, const PropertyBase*> Properties;
+    std::unordered_map<std::string, void*> Owners;
+    ForEachLeaf(*Obj, [&](const std::string& full, const PropertyBase& Leaf, void* OwnerPtr){
+        Properties[full]  = &Leaf;
+        Owners[full] = OwnerPtr;
     });
 
     for (uint16_t i=0; i<count; ++i) {
         std::string Name; if (!ReadStream(InputStream,Name)) return nullptr;
         uint8_t Kind=0xFF; if (!Read_Unsigned8(InputStream,Kind)) return nullptr;
 
-        auto It = props.find(Name);
-        const PropertyBase* Pb = (It==props.end()? nullptr : It->second);
-        void* OwnerPtr = (Pb? owners[Name] : nullptr);
+        auto It = Properties.find(Name);
+        const PropertyBase* Pb = (It==Properties.end()? nullptr : It->second);
+        void* OwnerPtr = (Pb? Owners[Name] : nullptr);
 
         switch (Kind) {
             case 0: { uint8_t b=0; if(!Read_Unsigned8(InputStream,b)) return nullptr;

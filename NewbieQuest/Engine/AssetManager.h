@@ -25,9 +25,9 @@ public:
     FileSystem::path MakeAssetPath(std::string Name);  // append .qasset if missing
 
     bool SaveAssetByText(const QObject& Obj, std::string Name);
-    std::unique_ptr<QObject> LoadAssetFromText(std::string Name);
+    std::unique_ptr<QObject> LoadAssetFromText(const std::string Name);
 
-    bool SaveAsset(const QObject& obj, const std::string Name);
+    bool SaveAsset(const QObject& Obj, const std::string Name);
     std::unique_ptr<QObject> LoadAssetBinary(const std::string Name);
 
     template<typename T>
@@ -198,13 +198,14 @@ private:
 // emit(Name, LeafProperty, OwnerPtrOfLeaf)
     
 template <typename Emit>
-inline void ForEachLeafConst(const QObject& Obj, const Emit& emit) {
+inline void ForEachLeafConst(const QObject& Obj, const Emit& emit)
+{
     std::function<void(const void*, const StructInfo&, const std::string&)> WalkStruct;
     WalkStruct = [&](const void* StructPtr, const StructInfo& Si, const std::string& Prefix){
         Si.ForEachProperty([&](const PropertyBase& Sp){
             if (Sp.Kind == BasicKind::Struct && Sp.GetStructInfo()) {
-                const void* nested = Sp.CPtr(StructPtr);
-                WalkStruct(nested, *Sp.GetStructInfo(), Prefix + Sp.Name + ".");
+                const void* Nested = Sp.CPtr(StructPtr);
+                WalkStruct(Nested, *Sp.GetStructInfo(), Prefix + Sp.Name + ".");
             } else {
                 emit(Prefix + Sp.Name, Sp, StructPtr);
             }
@@ -229,8 +230,8 @@ inline void ForEachLeaf(QObject& Obj, const Emit& emit) {
     WalkStruct = [&](void* StructPtr, const StructInfo& Si, const std::string& Prefix){
         Si.ForEachProperty([&](const PropertyBase& Sp){
             if (Sp.Kind == BasicKind::Struct && Sp.GetStructInfo()) {
-                void* nested = Sp.Ptr(StructPtr);
-                WalkStruct(nested, *Sp.GetStructInfo(), Prefix + Sp.Name + ".");
+                void* Nested = Sp.Ptr(StructPtr);
+                WalkStruct(Nested, *Sp.GetStructInfo(), Prefix + Sp.Name + ".");
             } else {
                 emit(Prefix + Sp.Name, Sp, StructPtr);
             }
